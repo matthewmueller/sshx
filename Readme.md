@@ -1,6 +1,6 @@
-# SSH
+# sshx
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/matthewmueller/ssh.svg)](https://pkg.go.dev/github.com/matthewmueller/ssh)
+[![Go Reference](https://pkg.go.dev/badge/github.com/matthewmueller/sshx.svg)](https://pkg.go.dev/github.com/matthewmueller/sshx)
 
 Tiny wrapper around [golang.org/x/crypto/ssh](https://pkg.go.dev/golang.org/x/crypto/ssh) that has better defaults. Returns an `*golang.org/x/crypto/ssh.Client` that can be used elsewhere
 
@@ -16,14 +16,14 @@ The goal being it works exactly like if you did `ssh user@host` on your machine.
 
 ```go
 // Dial a server
-client, err := ssh.Dial("vagrant", "127.0.0.1:2222")
+client, err := sshx.Dial("vagrant", "127.0.0.1:2222")
 if err != nil {
   // handle error
 }
 defer client.Close()
 
 // Run a command
-stdout, err := ssh.Run(client, "ls -al")
+stdout, err := sshx.Run(client, "ls -al")
 if err != nil {
   // handle error
 }
@@ -32,7 +32,7 @@ if err != nil {
 ## Install
 
 ```sh
-go get github.com/matthewmueller/ssh
+go get github.com/matthewmueller/sshx
 ```
 
 ## Development
@@ -40,8 +40,8 @@ go get github.com/matthewmueller/ssh
 First, clone the repo:
 
 ```sh
-git clone https://github.com/matthewmueller/ssh
-cd ssh
+git clone https://github.com/matthewmueller/sshx
+cd sshx
 ```
 
 Next, install dependencies:

@@ -1,4 +1,4 @@
-module github.com/matthewmueller/ssh
+module github.com/matthewmueller/sshx
 
 go 1.23.0
 
