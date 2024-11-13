@@ -97,7 +97,8 @@ func Run(ssh *Client, cmd string) (string, error) {
 	if err := session.Run(cmd); err != nil {
 		return "", err
 	}
-	return stdout.String(), nil
+	// Trim spacing before and after stdout by default
+	return strings.TrimSpace(stdout.String()), nil
 }
 
 // Exec a command on the remote host
