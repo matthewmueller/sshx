@@ -1,3 +1,7 @@
+# 0.0.4 / 2024-11-13
+
+- ssh -> sshx to make it easier to pull functions from underlying ssh
+
 # 0.0.3 / 2024-11-13
 
 - switch to splitting user and host as separate params
