@@ -15,10 +15,6 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
-// Client is an alias for ssh.Client
-type Client = ssh.Client
-type ClientConfig = ssh.ClientConfig
-
 // Split a user@host[:port] string into user and host.
 func Split(userHost string) (user string, host string, err error) {
 	parts := strings.Split(userHost, "@")
@@ -40,9 +36,9 @@ func Split(userHost string) (user string, host string, err error) {
 
 // Configure creates a new *ClientConfig based on sensible defaults.
 // This method is fairly error-resistent and intended for advanced use cases.
-func Configure(user, host string) (*ClientConfig, error) {
+func Configure(user, host string) (*ssh.ClientConfig, error) {
 	// Create the client config
-	config := &ClientConfig{
+	config := &ssh.ClientConfig{
 		User: user,
 	}
 
@@ -63,7 +59,7 @@ func Configure(user, host string) (*ClientConfig, error) {
 }
 
 // Dial creates a new ssh.Client with sensible defaults
-func Dial(user, host string) (*Client, error) {
+func Dial(user, host string) (*ssh.Client, error) {
 	config, err := Configure(user, host)
 	if err != nil {
 		return nil, err
@@ -73,7 +69,7 @@ func Dial(user, host string) (*Client, error) {
 }
 
 // Run a command on the remote host
-func Run(ssh *Client, cmd string) (string, error) {
+func Run(ssh *ssh.Client, cmd string) (string, error) {
 	session, err := ssh.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("ssh: could not create session: %w", err)
@@ -90,7 +86,7 @@ func Run(ssh *Client, cmd string) (string, error) {
 }
 
 // Exec a command on the remote host
-func Exec(ssh *Client, cmd string) error {
+func Exec(ssh *ssh.Client, cmd string) error {
 	session, err := ssh.NewSession()
 	if err != nil {
 		return fmt.Errorf("ssh: could not create session: %w", err)
