@@ -1,3 +1,7 @@
+# 0.0.5 / 2024-11-13
+
+- remove aliases
+
 # 0.0.4 / 2024-11-13
 
 - ssh -> sshx to make it easier to pull functions from underlying ssh
