@@ -40,15 +40,7 @@ func Split(userHost string) (user string, host string, err error) {
 
 // Configure creates a new *ClientConfig based on sensible defaults.
 // This method is fairly error-resistent and intended for advanced use cases.
-func Configure(userHost string) (*ClientConfig, error) {
-	user, host, err := Split(userHost)
-	if err != nil {
-		return nil, err
-	}
-	return configure(user, host)
-}
-
-func configure(user, host string) (*ClientConfig, error) {
+func Configure(user, host string) (*ClientConfig, error) {
 	// Create the client config
 	config := &ClientConfig{
 		User: user,
@@ -71,12 +63,8 @@ func configure(user, host string) (*ClientConfig, error) {
 }
 
 // Dial creates a new ssh.Client with sensible defaults
-func Dial(userHost string) (*Client, error) {
-	user, host, err := Split(userHost)
-	if err != nil {
-		return nil, err
-	}
-	config, err := configure(user, host)
+func Dial(user, host string) (*Client, error) {
+	config, err := Configure(user, host)
 	if err != nil {
 		return nil, err
 	}

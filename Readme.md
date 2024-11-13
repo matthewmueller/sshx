@@ -16,7 +16,7 @@ The goal being it works exactly like if you did `ssh user@host` on your machine.
 
 ```go
 // Dial a server
-client, err := ssh.Dial("vagrant@127.0.0.1:2222")
+client, err := ssh.Dial("vagrant", "127.0.0.1:2222")
 if err != nil {
   // handle error
 }
