@@ -1,3 +1,7 @@
+# 0.0.6 / 2024-11-24
+
+- support allocating an interactive shell
+
 # 0.0.5 / 2024-11-13
 
 - remove aliases
