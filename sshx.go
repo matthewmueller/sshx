@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net"
 	"os"
 	osuser "os/user"
@@ -13,6 +14,7 @@ import (
 	"github.com/skeema/knownhosts"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/term"
 )
 
 // Split a user@host[:port] string into user and host.
@@ -94,6 +96,77 @@ func Exec(ssh *ssh.Client, cmd string) error {
 	defer session.Close()
 	session.Stderr = os.Stderr
 	return session.Run(cmd)
+}
+
+func Shell(sshc *ssh.Client, dir string, args ...string) error {
+	if !fs.ValidPath(dir) {
+		return fmt.Errorf("ssh: invalid directory %q", dir)
+	}
+
+	session, err := sshc.NewSession()
+	if err != nil {
+		return fmt.Errorf("ssh: could not create session: %w", err)
+	}
+	defer session.Close()
+
+	// Change to the specified directory
+	session.Stdin = os.Stdin
+	session.Stdout = os.Stdout
+	session.Stderr = os.Stderr
+
+	// If we have args, don't allocate a terminal. Just run the command and
+	// return the result
+	if len(args) > 0 {
+		return session.Run(formatCommand(dir, args...))
+	}
+
+	fd := int(os.Stdin.Fd())
+
+	state, err := term.MakeRaw(fd)
+	if err != nil {
+		return fmt.Errorf("ssh: could not make terminal raw: %w", err)
+	}
+	defer term.Restore(fd, state)
+
+	// Get the terminal size
+	termWidth, termHeight, err := term.GetSize(fd)
+	if err != nil {
+		return fmt.Errorf("ssh: could not get terminal size: %w", err)
+	}
+
+	// Default to xterm-256color
+	termType := os.Getenv("TERM")
+	if termType == "" {
+		termType = "xterm-256color"
+	}
+
+	// request pty
+	if err := session.RequestPty(termType, termHeight, termWidth, ssh.TerminalModes{}); err != nil {
+		return fmt.Errorf("ssh: could not request pty: %w", err)
+	}
+
+	// Wait for the session to complete
+	if err := session.Run(formatCommand(dir)); err != nil {
+		switch e := err.(type) {
+		case *ssh.ExitError:
+			// Interrupted by the user (SIGINT)
+			if e.ExitStatus() == 130 {
+				return nil
+			}
+			return fmt.Errorf("ssh: exit status %d", e.ExitStatus())
+		default:
+			return fmt.Errorf("ssh: session ended unexpectedly: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func formatCommand(dir string, args ...string) string {
+	if len(args) == 0 {
+		return fmt.Sprintf("cd %s && exec $SHELL", dir)
+	}
+	return fmt.Sprintf("cd %s && exec $SHELL -c %q", dir, strings.Join(args, " "))
 }
 
 func loadKnownHosts() (knownhosts.HostKeyCallback, error) {

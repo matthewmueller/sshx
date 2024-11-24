@@ -11,6 +11,7 @@ The goal being it works exactly like if you did `ssh user@host` on your machine.
 - Handles `~/.ssh/known_hosts` on OSX thanks to [skeema/knownhosts](github.com/skeema/knownhosts).
 - Uses the active SSH agent on your machine if there is one, allowing you to seamlessly connect without providing a private key (and often the password needed to decrypt that private key).
 - Adds `Run(ssh, cmd) (stdout, error)` and `Exec(ssh, cmd) error` commands.
+- Allocate an interactive shell with `sshx.Shell(sshClient, workDir)`
 
 ## Example
 
