@@ -38,7 +38,18 @@ func Split(userHost string) (user string, host string, err error) {
 
 // Configure creates a new *ClientConfig based on sensible defaults.
 // This method is fairly error-resistent and intended for advanced use cases.
-func Configure(user, host string) (*ssh.ClientConfig, error) {
+func Configure(user, host string, signers ...ssh.Signer) *ssh.ClientConfig {
+	config := configure(user, host, signers...)
+
+	// Add the agent auth method if available
+	if agent, err := loadAgent(); nil == err {
+		config.Auth = append(config.Auth, ssh.PublicKeysCallback(agent.Signers))
+	}
+
+	return config
+}
+
+func configure(user, host string, signers ...ssh.Signer) *ssh.ClientConfig {
 	// Create the client config
 	config := &ssh.ClientConfig{
 		User: user,
@@ -52,22 +63,44 @@ func Configure(user, host string) (*ssh.ClientConfig, error) {
 		config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 	}
 
-	// Add the agent auth method if available
-	if agentAuth, err := loadAgent(); nil == err {
-		config.Auth = []ssh.AuthMethod{agentAuth}
+	// Add the signers
+	for _, signer := range signers {
+		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 	}
 
-	return config, nil
+	return config
 }
 
 // Dial creates a new ssh.Client with sensible defaults
-func Dial(user, host string) (*ssh.Client, error) {
-	config, err := Configure(user, host)
-	if err != nil {
-		return nil, err
-	}
+func Dial(user, host string, signers ...ssh.Signer) (*ssh.Client, error) {
+	// Configure the ssh client
+	config := Configure(user, host, signers...)
 	// Dial the ssh connection
 	return ssh.Dial("tcp", host, config)
+}
+
+// Test the remote host connection, returning the first signer that was
+// successfully used to connect to the remote host.
+func Test(user, host string, signers ...ssh.Signer) (ssh.Signer, error) {
+	// Add the agent signers if available
+	if agent, err := loadAgent(); nil == err {
+		agentSigners, err := agent.Signers()
+		if err != nil {
+			return nil, err
+		}
+		signers = append(signers, agentSigners...)
+	}
+
+	// Try each signer until we find one that works
+	for _, signer := range signers {
+		config := configure(user, host, signer)
+		if client, err := ssh.Dial("tcp", host, config); nil == err {
+			client.Close()
+			return signer, nil
+		}
+	}
+
+	return nil, errors.New("ssh: no valid signers")
 }
 
 // Run a command on the remote host
@@ -84,7 +117,7 @@ func Run(ssh *ssh.Client, cmd string) (string, error) {
 		return "", err
 	}
 	// Trim spacing before and after stdout by default
-	return strings.TrimSpace(stdout.String()), nil
+	return strings.TrimRight(stdout.String(), "\n"), nil
 }
 
 // Exec a command on the remote host
@@ -178,15 +211,15 @@ func loadKnownHosts() (knownhosts.HostKeyCallback, error) {
 	return knownhosts.New(knownHostsPath)
 }
 
-func loadAgent() (ssh.AuthMethod, error) {
+// loadAgent returns an SSH agent client if available.
+func loadAgent() (agent.ExtendedAgent, error) {
 	unixSocket := os.Getenv("SSH_AUTH_SOCK")
 	if unixSocket == "" {
-		return nil, errors.New("ssh: missing SSH_AUTH_SOCK")
+		return nil, errors.New("ssh: SSH_AUTH_SOCK is not set")
 	}
 	sshAgent, err := net.Dial("unix", unixSocket)
 	if err != nil {
 		return nil, fmt.Errorf("could not find ssh agent: %w", err)
 	}
-	authMethod := ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
-	return authMethod, nil
+	return agent.NewClient(sshAgent), nil
 }
