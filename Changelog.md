@@ -1,3 +1,8 @@
+# 0.0.7 / 2024-11-28
+
+- add `Test` function
+- Allow `Dial` and `Configure` to take signers
+
 # 0.0.6 / 2024-11-24
 
 - support allocating an interactive shell
