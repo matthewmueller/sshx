@@ -79,6 +79,28 @@ func Dial(user, host string, signers ...ssh.Signer) (*ssh.Client, error) {
 	return ssh.Dial("tcp", host, config)
 }
 
+// Dial each signer until we find one that works
+func DialEach(user, host string, signers ...ssh.Signer) (*ssh.Client, ssh.Signer, error) {
+	// Add the agent signers if available
+	if agent, err := loadAgent(); nil == err {
+		agentSigners, err := agent.Signers()
+		if err != nil {
+			return nil, nil, err
+		}
+		signers = append(signers, agentSigners...)
+	}
+
+	// Try each signer until we find one that works
+	for _, signer := range signers {
+		config := configure(user, host, signer)
+		if client, err := ssh.Dial("tcp", host, config); nil == err {
+			return client, signer, nil
+		}
+	}
+
+	return nil, nil, fmt.Errorf("ssh: unable to connect to %s@%s", user, host)
+}
+
 // Test the remote host connection, returning the first signer that was
 // successfully used to connect to the remote host.
 func Test(user, host string, signers ...ssh.Signer) (ssh.Signer, error) {
@@ -100,7 +122,7 @@ func Test(user, host string, signers ...ssh.Signer) (ssh.Signer, error) {
 		}
 	}
 
-	return nil, errors.New("ssh: no valid signers")
+	return nil, fmt.Errorf("ssh: unable to connect to %s@%s", user, host)
 }
 
 // Run a command on the remote host
