@@ -1,3 +1,8 @@
+# 0.0.8 / 2024-11-29
+
+- add a `DialEach` function that also returns the signer
+- improved error message for `Test`
+
 # 0.0.7 / 2024-11-28
 
 - add `Test` function
