@@ -29,16 +29,13 @@ func Split(userHost string) (user string, host string, err error) {
 		return current.Username, userHost, nil
 	}
 	user, host = parts[0], parts[1]
-	parts = strings.Split(host, ":")
-	if len(parts) == 1 {
-		host += ":22"
-	}
-	return user, host, nil
+	return user, formatHost(host), nil
 }
 
 // Configure creates a new *ClientConfig based on sensible defaults.
 // This method is fairly error-resistent and intended for advanced use cases.
 func Configure(user, host string, signers ...ssh.Signer) *ssh.ClientConfig {
+	host = formatHost(host)
 	config := configure(user, host, signers...)
 
 	// Add the agent auth method if available
@@ -73,6 +70,7 @@ func configure(user, host string, signers ...ssh.Signer) *ssh.ClientConfig {
 
 // Dial creates a new ssh.Client with sensible defaults
 func Dial(user, host string, signers ...ssh.Signer) (*ssh.Client, error) {
+	host = formatHost(host)
 	// Configure the ssh client
 	config := Configure(user, host, signers...)
 	// Dial the ssh connection
@@ -81,6 +79,7 @@ func Dial(user, host string, signers ...ssh.Signer) (*ssh.Client, error) {
 
 // Dial each signer until we find one that works
 func DialEach(user, host string, signers ...ssh.Signer) (*ssh.Client, ssh.Signer, error) {
+	host = formatHost(host)
 	// Add the agent signers if available
 	if agent, err := loadAgent(); nil == err {
 		agentSigners, err := agent.Signers()
@@ -89,7 +88,6 @@ func DialEach(user, host string, signers ...ssh.Signer) (*ssh.Client, ssh.Signer
 		}
 		signers = append(signers, agentSigners...)
 	}
-
 	// Try each signer until we find one that works
 	for _, signer := range signers {
 		config := configure(user, host, signer)
@@ -104,6 +102,7 @@ func DialEach(user, host string, signers ...ssh.Signer) (*ssh.Client, ssh.Signer
 // Test the remote host connection, returning the first signer that was
 // successfully used to connect to the remote host.
 func Test(user, host string, signers ...ssh.Signer) (ssh.Signer, error) {
+	host = formatHost(host)
 	// Add the agent signers if available
 	if agent, err := loadAgent(); nil == err {
 		agentSigners, err := agent.Signers()
@@ -244,4 +243,11 @@ func loadAgent() (agent.ExtendedAgent, error) {
 		return nil, fmt.Errorf("could not find ssh agent: %w", err)
 	}
 	return agent.NewClient(sshAgent), nil
+}
+
+func formatHost(addr string) string {
+	if strings.LastIndexByte(addr, ':') < 0 {
+		return net.JoinHostPort(addr, "22")
+	}
+	return addr
 }

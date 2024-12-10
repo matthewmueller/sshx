@@ -3,6 +3,7 @@ module github.com/matthewmueller/sshx
 go 1.23.0
 
 require (
+	github.com/matryer/is v1.4.1
 	github.com/skeema/knownhosts v1.3.0
 	golang.org/x/crypto v0.29.0
 	golang.org/x/term v0.26.0
