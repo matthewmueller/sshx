@@ -1,3 +1,7 @@
+# 0.0.9 / 2024-12-10
+
+- imply host:22 when host doesn't include port
+
 # 0.0.8 / 2024-11-29
 
 - add a `DialEach` function that also returns the signer
