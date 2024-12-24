@@ -11,11 +11,12 @@ func ExampleDial() {
 		panic(err)
 	}
 	defer client.Close()
-	err = sshx.Exec(client, "ls -al")
+	err = sshx.Exec(client, "echo 'sshx'")
 	if err != nil {
 		panic(err)
 	}
 	// Output:
+	// sshx
 }
 
 func ExampleTest() {

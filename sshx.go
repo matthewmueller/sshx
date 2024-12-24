@@ -124,7 +124,7 @@ func Test(user, host string, signers ...ssh.Signer) (ssh.Signer, error) {
 	return nil, fmt.Errorf("ssh: unable to connect to %s@%s", user, host)
 }
 
-// Run a command on the remote host
+// Run a command on the remote host, piping stderr to os.Stderr and returning stdout
 func Run(ssh *ssh.Client, cmd string) (string, error) {
 	session, err := ssh.NewSession()
 	if err != nil {
@@ -141,13 +141,14 @@ func Run(ssh *ssh.Client, cmd string) (string, error) {
 	return strings.TrimRight(stdout.String(), "\n"), nil
 }
 
-// Exec a command on the remote host
+// Exec a command on the remote host, piping output to os.Stdout and os.Stderr
 func Exec(ssh *ssh.Client, cmd string) error {
 	session, err := ssh.NewSession()
 	if err != nil {
 		return fmt.Errorf("ssh: could not create session: %w", err)
 	}
 	defer session.Close()
+	session.Stdout = os.Stdout
 	session.Stderr = os.Stderr
 	return session.Run(cmd)
 }
