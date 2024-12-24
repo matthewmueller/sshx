@@ -1,3 +1,7 @@
+# 0.0.10 / 2024-12-24
+
+- sshx.Exec should also pipe stdout to os.Stdout
+
 # 0.0.9 / 2024-12-10
 
 - imply host:22 when host doesn't include port
