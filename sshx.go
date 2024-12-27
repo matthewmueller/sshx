@@ -230,7 +230,34 @@ func loadKnownHosts() (knownhosts.HostKeyCallback, error) {
 		return nil, err
 	}
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
-	return knownhosts.New(knownHostsPath)
+	knownHostsDb, err := knownhosts.NewDB(knownHostsPath)
+	if err != nil {
+		return nil, fmt.Errorf("ssh: could not load known_hosts db: %w", err)
+	}
+
+	// Create a custom permissive hostkey callback which still errors on hosts
+	// with changed keys, but allows unknown hosts and adds them to known_hosts
+	return knownhosts.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		innerCallback := knownHostsDb.HostKeyCallback()
+		if err := innerCallback(hostname, remote, key); err != nil {
+			// Any error other than unknown host is fatal
+			if !knownhosts.IsHostUnknown(err) {
+				return err
+			}
+			// TODO: we should prompt the user to accept the new host key, similar to the ssh command
+			//
+			// The authenticity of host 'xx.xx.xxx.xxx (xx.xx.xxx.xxx)' can't be established.
+			// ED25519 key fingerprint is SHA256:xxx.
+			// This key is not known by any other names.
+			// Are you sure you want to continue connecting (yes/no/[fingerprint])?
+			if file, err := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY, 0600); nil == err {
+				defer file.Close()
+				// Attempt to write the new host to known_hosts, but don't fail if it doesn't work
+				knownhosts.WriteKnownHost(file, hostname, remote, key)
+			}
+		}
+		return nil
+	}), nil
 }
 
 // loadAgent returns an SSH agent client if available.
