@@ -1,3 +1,7 @@
+# 0.0.11 / 2024-12-28
+
+- support connecting to unknown hosts and updating known_hosts by default
+
 # 0.0.10 / 2024-12-24
 
 - sshx.Exec should also pipe stdout to os.Stdout
