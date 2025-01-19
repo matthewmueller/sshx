@@ -1,3 +1,7 @@
+# 0.0.12 / 2025-01-19
+
+- add a DialConfig function
+
 # 0.0.11 / 2024-12-28
 
 - support connecting to unknown hosts and updating known_hosts by default
