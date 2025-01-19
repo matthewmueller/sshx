@@ -77,6 +77,12 @@ func Dial(user, host string, signers ...ssh.Signer) (*ssh.Client, error) {
 	return ssh.Dial("tcp", host, config)
 }
 
+// DialConfig creates a new ssh.Client with the provided ssh config
+func DialConfig(host string, config *ssh.ClientConfig) (*ssh.Client, error) {
+	host = formatHost(host)
+	return ssh.Dial("tcp", host, config)
+}
+
 // Dial each signer until we find one that works
 func DialEach(user, host string, signers ...ssh.Signer) (*ssh.Client, ssh.Signer, error) {
 	host = formatHost(host)
